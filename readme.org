@@ -1,0 +1,25 @@
+Embedded UI generator
+
+Generate an HTML UI at compile-time which can display and edit a single rust struct.
+
+* roadmap
+
+- control a single LED via editing an rgb struct with <input type="numeric" min="0" max="255">
+- add two-variant enum, Off and On(RGB{...})
+
+* implementation options
+
+JSON Schema generated on rust types via https://docs.rs/schemars/latest/schemars/ 
+then generate UI
+- jQuery forms http://www.alpacajs.org/
+- react https://rjsf-team.github.io/react-jsonschema-form/
+  - this doesn't quite get enum variant UI right.
+
+JSONSchema discussion of form generation use case: https://github.com/orgs/json-schema-org/discussions/70
+
+reflecting on how serde / bincode would pack a type: https://crates.io/crates/serde-reflection
+
+postcard + schema? https://github.com/jamesmunns/postcard/issues/92
+
+
+similar-ish idea in Rust: UI controls defined in firmware for a web UI: https://github.com/spookyvision/embedded-web-ui
