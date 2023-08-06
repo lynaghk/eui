@@ -1,6 +1,11 @@
 Embedded UI generator
 
 Generate an HTML UI at compile-time which can display and edit a single rust struct.
+* install / run
+
+cargo install --locked trunk
+
+trunk serve src/index.html
 
 * roadmap
 
