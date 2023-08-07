@@ -5,7 +5,9 @@ Generate an HTML UI at compile-time which can display and edit a single rust str
 
 cargo install --locked trunk
 
-trunk serve src/index.html
+cd frontend
+trunk build
+toast dev-frontend
 
 * roadmap
 
