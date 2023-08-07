@@ -3,7 +3,9 @@
   (:require [frontend.macros :refer [p pp timeout interval]]
             clojure.string
             [rum.core :as rum]
-            [cljs.core.match :refer-macros [match]]))
+            [cljs.core.match :refer-macros [match]]
+            [fipp.edn :refer [pprint]]))
+
 
 (declare trigger!)
 (declare update-app)
@@ -14,6 +16,31 @@
 (defn json->clj
   [json]
   (js->clj (.parse js/JSON json) :keywordize-keys true))
+
+
+
+(rum/defcs *render < (rum/local nil)
+  [{!value :rum/local :as state}
+   {:strs [name ty]}
+   on-change
+   value]
+
+  (match ty
+    {"Enum" variants} [:label name]
+
+
+    "UnitVariant" [:label name]
+
+    "U8" [:label name
+          [:input {:on-change (fn [e] (on-change (.-value (.-target e))))
+                   :type :range
+                   :value value
+                   :min 0 :max 255}]
+          [:input {:on-change (fn [e] (on-change (.-value (.-target e))))
+                   :value value}]]
+
+    :else nil))
+
 
 (rum/defcs *app <
   {:did-mount (fn [state]
@@ -27,10 +54,22 @@
                 (p error)
                 (assoc state ::error error))}
 
-  [state trigger! !app]
+  (rum/local nil)
 
-  (let [app @!app]
-    [:pre "Hello!!!!"]))
+  [{!value :rum/local :as state} trigger! !app]
+
+  (let [{:keys [schema value] :as app} @!app]
+    [:.app
+     [:pre (with-out-str (pprint schema))]
+     [:pre (with-out-str (pprint value))]
+     (*render schema
+              (fn [x] (p x))
+              value)
+
+     ;; (*render {:name "Test" :ty "U8"}
+     ;;          (fn [x] (p x))
+     ;;          value)
+     ]))
 
 
 (defn update-app
@@ -78,6 +117,11 @@
       (defn ^:dev/after-load after-load!
         []
         (full-render!))
+
+      ;; this fn called by rust
+      (aset js/window "eui_invoke" (fn [s]
+                                     (let [[schema value] (js->clj (.parse js/JSON s))]
+                                       (swap! !app assoc :schema schema :value value))))
 
       ;;initial render
       (full-render!))))
