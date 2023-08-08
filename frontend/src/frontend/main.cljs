@@ -139,10 +139,10 @@
 
      [:section [:h2 "Output"]
       [:pre (with-out-str (pprint @!value))]
-      (when-let [valid? (some-> fns (aget "eui_is_valid"))]
-        [:span
-         "Valid? " (when-let [v @!value]
-                     (str (valid? (js/JSON.stringify (clj->js v)))))])]
+      (when-let [serialize (some-> fns (aget "eui_serialize"))]
+        (when-let [v @!value]
+          (let [bytes (p (serialize (js/JSON.stringify (clj->js v))))]
+            [:span "Valid? " (str (not (nil? bytes)))])))]
 
      [:section [:h2 "Picker"]
       (*render schema

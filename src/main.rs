@@ -31,8 +31,10 @@ fn render(document: &Document, body: &HtmlElement) -> Result<(), JsValue> {
 }
 
 #[wasm_bindgen]
-pub fn eui_is_valid(s: &str) -> bool {
-    serde_json::from_str::<Light>(s).is_ok()
+pub fn eui_serialize(s: &str) -> Option<Vec<u8>> {
+    serde_json::from_str::<Light>(s)
+        .ok()
+        .and_then(|x| postcard::to_stdvec(&x).ok())
 }
 
 #[wasm_bindgen]
