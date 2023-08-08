@@ -1,0 +1,13 @@
+[build]
+pattern_script = """
+<script type=\"module\">
+import * as bindings from '{base}{js}';
+bindings.default('{base}{wasm}').then(wasm => {
+  document.dispatchEvent(new CustomEvent(\"eui-wasm-loaded\", {
+    detail: {
+      wasm: wasm,
+      bindings: bindings
+    }
+  }))
+});
+</script>"""

@@ -10,7 +10,7 @@ tasks:
     mount_paths:
       - .
     command: |
-      sass src/style.sass resources/public/style.css
+      sass src/style.sass dist/style.css
 
       npm install --no-audit # run this to make sure local node_modules is up to date with lockfile.
 
@@ -26,7 +26,7 @@ tasks:
     mount_paths:
       - .
     command: |
-      # sass --watch src/style.sass resources/public/style.css &
+      sass --watch src/style.sass dist/style.css &
       clojure -M:shadow-cljs watch frontend
     ports:
       - 9631:9631 # shadow cljs reloading connection
