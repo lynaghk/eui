@@ -31,31 +31,21 @@ fn render(document: &Document, body: &HtmlElement) -> Result<(), JsValue> {
 }
 
 #[wasm_bindgen]
-extern "C" {
-    fn eui_invoke(s: &str);
-}
-
-#[wasm_bindgen]
 pub fn eui_is_valid(s: &str) -> bool {
     serde_json::from_str::<Light>(s).is_ok()
 }
 
-fn main() -> Result<(), JsValue> {
-    let window = web_sys::window().unwrap();
-    let document = window.document().unwrap();
-    let body = document.body().unwrap();
-
-    //render(&document, &body)?;
-
+#[wasm_bindgen]
+pub fn eui_schema() -> String {
     use postcard::experimental::schema::Schema;
+    serde_json::to_string_pretty(Light::SCHEMA).unwrap()
+}
 
-    eui_invoke(
-        &serde_json::to_string_pretty(&(
-            Light::SCHEMA,
-            Light::On(Color { r: 1, g: 2, b: 3 }), //Light::Off,
-        ))
-        .unwrap(),
-    );
+fn main() -> Result<(), JsValue> {
+    // let window = web_sys::window().unwrap();
+    // let document = window.document().unwrap();
+    // let body = document.body().unwrap();
+    //render(&document, &body)?;
 
     Ok(())
 }
