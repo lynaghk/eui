@@ -13,10 +13,22 @@ pub struct Color {
     b: u8,
 }
 
-// pub fn main() {
-//     use postcard::experimental::schema::Schema;
-//     println!("{}", serde_json::to_string_pretty(&Light::SCHEMA).unwrap());
-// }
+pub fn main() {
+    use postcard::experimental::schema::Schema;
+    //println!("{}", serde_json::to_string_pretty(&Light::SCHEMA).unwrap());
+
+    let x = Light::On(Color {
+        r: 123,
+        g: 33,
+        b: 22,
+    });
+    let bs = postcard::to_stdvec_cobs(&x).unwrap();
+    //write bs in binary to stdout
+    let mut stdout = std::io::stdout().lock();
+    use std::io::Write;
+    stdout.write_all(&bs[..]).unwrap();
+    stdout.flush().unwrap();
+}
 
 use wasm_bindgen::prelude::*;
 use web_sys::{Document, HtmlElement};
@@ -43,11 +55,11 @@ pub fn eui_schema() -> String {
     serde_json::to_string_pretty(Light::SCHEMA).unwrap()
 }
 
-fn main() -> Result<(), JsValue> {
-    // let window = web_sys::window().unwrap();
-    // let document = window.document().unwrap();
-    // let body = document.body().unwrap();
-    //render(&document, &body)?;
+// fn main() -> Result<(), JsValue> {
+//     // let window = web_sys::window().unwrap();
+//     // let document = window.document().unwrap();
+//     // let body = document.body().unwrap();
+//     //render(&document, &body)?;
 
-    Ok(())
-}
+//     Ok(())
+// }
