@@ -22,6 +22,9 @@ pub fn main() {
         g: 33,
         b: 22,
     });
+
+    // let x = Light::Off;
+
     let bs = postcard::to_stdvec_cobs(&x).unwrap();
     //write bs in binary to stdout
     let mut stdout = std::io::stdout().lock();
@@ -46,7 +49,7 @@ fn render(document: &Document, body: &HtmlElement) -> Result<(), JsValue> {
 pub fn eui_serialize(s: &str) -> Option<Vec<u8>> {
     serde_json::from_str::<Light>(s)
         .ok()
-        .and_then(|x| postcard::to_stdvec(&x).ok())
+        .and_then(|x| postcard::to_stdvec_cobs(&x).ok())
 }
 
 #[wasm_bindgen]

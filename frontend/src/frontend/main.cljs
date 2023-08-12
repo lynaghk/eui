@@ -107,7 +107,10 @@
                                         :type :range
                                         :value value
                                         :min 0 :max 255}]
-                               [:input {:on-change (fn [e] (reset! !local (js/parseInt (.-value (.-target e)))))
+                               [:input {:on-change (fn [e]
+                                                     (let [s (.-value (.-target e))
+                                                           x (js/parseFloat s)]
+                                                       (reset! !local (if (NaN? x) "" x))))
                                         :value value}]]
 
       :else (do
@@ -132,22 +135,51 @@
 
   [{!value :rum/local :as state} trigger! !app]
 
-  (let [{:keys [schema value fns] :as app} @!app]
+  (let [{:keys [schema value fns port] :as app} @!app]
     [:.app
 
-     [:pre (with-out-str (pprint schema))]
+     (cond
 
-     [:section [:h2 "Output"]
-      [:pre (with-out-str (pprint @!value))]
-      (when-let [serialize (some-> fns (aget "eui_serialize"))]
-        (when-let [v @!value]
-          (let [bytes (p (serialize (js/JSON.stringify (clj->js v))))]
-            [:span "Valid? " (str (not (nil? bytes)))])))]
+       (nil? port)
+       [:button {:on-click (fn [e]
+                             (-> (.-serial js/navigator)
+                                 (.requestPort #js {})
+                                 (.then (fn [port]
+                                          (-> (.open port #js {:baudRate 115200})
+                                              (.then (fn []
+                                                       (.addEventListener port "disconnect" #(trigger! :port-closed {:port port}))
+                                                       (trigger! :port-opened {:port (.getWriter (.-writable port))}))))))
+                                 (.catch (fn [err]
+                                           (p err)))))}
+        "Connect"]
 
-     [:section [:h2 "Picker"]
-      (*render schema
-               value
-               (fn [x] (reset! !value x)))]
+
+       (not (nil? port))
+       [:.connected
+
+        [:pre (with-out-str (pprint schema))]
+
+        [:section [:h2 "Output"]
+         [:pre (with-out-str (pprint @!value))]
+         (when-let [serialize (some-> fns (aget "eui_serialize"))]
+           (when-let [v @!value]
+             (let [bytes (serialize (js/JSON.stringify (clj->js v)))
+                   valid? (not (nil? bytes))]
+
+               (when valid?
+                 (.write port bytes))
+
+               [:span "Valid? " (str valid?)])))]
+
+        [:section [:h2 "Picker"]
+         (*render schema
+                  value
+                  (fn [x] (reset! !value x)))]])
+
+
+
+
+
 
      ;; (*render {:name "Test" :ty "U8"}
      ;;          (fn [x] (p x))
@@ -159,6 +191,17 @@
   [app event]
 
   (match event
+
+    {:event :port-opened :port port}
+    (do
+      (when-let [p (:port app)]
+        (.close p))
+      (assoc app :port port))
+
+    {:event :port-closed :port port}
+    (-> app
+        (->/when (= port (:port app))
+          (dissoc :port)))
 
     :else
     (do
@@ -202,8 +245,11 @@
         (full-render!))
 
       ;; this fn called by rust
-      (aset js/window "eui_invoke" (fn [s]
-                                     (swap! !app assoc :schema )))
+      ;; (aset js/window "eui_invoke" (fn [s]
+      ;;                                (swap! !app assoc :schema s)))
+
+      ;; (.then (.getPorts (.-serial js/navigator)) (fn [ports]
+      ;;                                              (trigger! :new-ports {:ports ports})))
 
       ;; expose wasm fns in js
       (.addEventListener js/document "eui-wasm-loaded" (fn [e]
@@ -212,6 +258,8 @@
                                                                 :schema (-> ((aget e "detail" "bindings" "eui_schema"))
                                                                             js/JSON.parse
                                                                             js->clj))))
+
+
 
       ;;initial render
       (full-render!))))
