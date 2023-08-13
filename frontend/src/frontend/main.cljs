@@ -157,7 +157,11 @@
        (not (nil? port))
        [:.connected
 
-        [:pre (with-out-str (pprint schema))]
+        (*render schema
+                 value
+                 (fn [x] (reset! !value x)))
+
+        ;;[:pre (with-out-str (pprint schema))]
 
         [:section [:h2 "Output"]
          [:pre (with-out-str (pprint @!value))]
@@ -171,10 +175,7 @@
 
                [:span "Valid? " (str valid?)])))]
 
-        [:section [:h2 "Picker"]
-         (*render schema
-                  value
-                  (fn [x] (reset! !value x)))]])
+        ])
 
 
 

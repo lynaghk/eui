@@ -11,9 +11,14 @@ toast dev-frontend
 
 * roadmap
 
-- control a single LED via editing an rgb struct with <input type="numeric" min="0" max="255">
-- add two-variant enum, Off and On(RGB{...})
+x control a single LED via editing an rgb struct with <input type="numeric" min="0" max="255">
+x add two-variant enum, Off and On(RGB{...})
 
+usable entirely through crate
+
+- copy so wasm-bindgen doesn't need to be installed by user? https://github.com/jakobhellermann/wasm-server-runner/blob/main/src/wasm_bindgen.rs
+
+- derive macro https://stackoverflow.com/questions/51310731/can-a-procedural-macro-derive-on-a-struct-add-other-derives
 * implementation options
 
 JSON Schema generated on rust types via https://docs.rs/schemars/latest/schemars/ 
