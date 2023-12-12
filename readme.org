@@ -3,7 +3,7 @@ Embedded UI generator
 Generate an HTML UI at compile-time which can display and edit a single rust struct.
 * install / run
 
-cargo install --locked trunk
+cargo install --locked --root ".cargo-installed/" --version 0.18.0 trunk
 
 cd frontend
 trunk build

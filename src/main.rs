@@ -14,8 +14,8 @@ pub struct Color {
 }
 
 pub fn main() {
-    // use postcard::experimental::schema::Schema;
-    // println!("{}", serde_json::to_string_pretty(&Light::SCHEMA).unwrap());
+    use postcard::experimental::schema::Schema;
+    println!("{}", serde_json::to_string_pretty(&Light::SCHEMA).unwrap());
 
     let x = Light::On(Color {
         r: 123,
