@@ -2,54 +2,19 @@
 
 use serde::Serialize;
 
-/// A schema type representing a variably encoded integer
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
-pub enum Varint {
-    /// A variably encoded i16
-    I16,
-    /// A variably encoded i32
-    I32,
-    /// A variably encoded i64
-    I64,
-    /// A variably encoded i128
-    I128,
-    /// A variably encoded u16
-    U16,
-    /// A variably encoded u32
-    U32,
-    /// A variably encoded u64
-    U64,
-    /// A variably encoded u128
-    U128,
-    /// A variably encoded usize
-    Usize,
-    /// A variably encoded isize
-    Isize,
-}
-
-/// Serde Data Model Types (and friends)
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub enum SdmTy {
-    /// The `bool` Serde Data Model Type
     Bool,
-
-    /// The `i8` Serde Data Model Type
-    I8,
-
-    /// The `u8` Serde Data Model Type
     U8,
-
-    /// The Serde Data Model Type for variably length encoded integers
-    Varint(Varint),
-
-    /// The `f32` Serde Data Model Type
+    U16,
+    U32,
+    U64,
+    I8,
+    I16,
+    I32,
+    I64,
     F32,
-
-    /// The `f64 Serde Data Model Type
     F64,
-
-    /// The `char` Serde Data Model Type
-    Char,
 
     /// The `String` Serde Data Model Type
     String,
@@ -150,9 +115,7 @@ macro_rules! impl_schema {
             }
         )*
     };
-    (varint => [$($t:ty: $varint:expr),*]) => {
-        impl_schema!($($t: SdmTy::Varint($varint)),*);
-    };
+
     (tuple => [$(($($generic:ident),*)),*]) => {
         $(
             impl<$($generic: Schema),*> Schema for ($($generic,)*) {
@@ -167,18 +130,18 @@ macro_rules! impl_schema {
 
 impl_schema![
     u8: SdmTy::U8,
+    u32: SdmTy::U32,
+    u64: SdmTy::U64,
     i8: SdmTy::I8,
+    i32: SdmTy::I32,
+    i64: SdmTy::I64,
     bool: SdmTy::Bool,
     f32: SdmTy::F32,
     f64: SdmTy::F64,
-    char: SdmTy::Char,
     str: SdmTy::String,
     (): SdmTy::Unit
 ];
-impl_schema!(varint => [
-    i16: Varint::I16, i32: Varint::I32, i64: Varint::I64, i128: Varint::I128,
-    u16: Varint::U16, u32: Varint::U32, u64: Varint::U64, u128: Varint::U128
-]);
+
 impl_schema!(tuple => [
     (A),
     (A, B),
@@ -220,6 +183,7 @@ impl<T: Schema> Schema for [T] {
         ty: &SdmTy::Seq(T::SCHEMA),
     };
 }
+
 impl<T: Schema, const N: usize> Schema for [T; N] {
     const SCHEMA: &'static NamedType = &NamedType {
         name: "[T; N]",
@@ -227,25 +191,6 @@ impl<T: Schema, const N: usize> Schema for [T; N] {
     };
 }
 
-#[cfg(feature = "heapless")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "heapless")))]
-impl<T: Schema, const N: usize> Schema for heapless::Vec<T, N> {
-    const SCHEMA: &'static NamedType = &NamedType {
-        name: "heapless::Vec<T, N>",
-        ty: &SdmTy::Seq(T::SCHEMA),
-    };
-}
-#[cfg(feature = "heapless")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "heapless")))]
-impl<const N: usize> Schema for heapless::String<N> {
-    const SCHEMA: &'static NamedType = &NamedType {
-        name: "heapless::String<N>",
-        ty: &SdmTy::String,
-    };
-}
-
-#[cfg(feature = "use-std")]
-#[cfg_attr(doc_cfg, doc(cfg(any(feature = "alloc", feature = "use-std"))))]
 impl<T: Schema> Schema for std::vec::Vec<T> {
     const SCHEMA: &'static NamedType = &NamedType {
         name: "Vec<T>",
@@ -253,28 +198,7 @@ impl<T: Schema> Schema for std::vec::Vec<T> {
     };
 }
 
-#[cfg(feature = "use-std")]
-#[cfg_attr(doc_cfg, doc(cfg(any(feature = "alloc", feature = "use-std"))))]
 impl Schema for std::string::String {
-    const SCHEMA: &'static NamedType = &NamedType {
-        name: "String",
-        ty: &SdmTy::String,
-    };
-}
-
-#[cfg(all(not(feature = "use-std"), feature = "alloc"))]
-extern crate alloc;
-
-#[cfg(all(not(feature = "use-std"), feature = "alloc"))]
-impl<T: Schema> Schema for alloc::vec::Vec<T> {
-    const SCHEMA: &'static NamedType = &NamedType {
-        name: "Vec<T>",
-        ty: &SdmTy::Seq(T::SCHEMA),
-    };
-}
-
-#[cfg(all(not(feature = "use-std"), feature = "alloc"))]
-impl Schema for alloc::string::String {
     const SCHEMA: &'static NamedType = &NamedType {
         name: "String",
         ty: &SdmTy::String,
