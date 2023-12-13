@@ -20,7 +20,7 @@ pub fn do_derive_schema(item: proc_macro::TokenStream) -> proc_macro::TokenStrea
 
     let expanded = quote! {
         impl #impl_generics ::eui::schema::Schema for #name #ty_generics #where_clause {
-            const SCHEMA: &'static ::eui::schema::NamedType = #ty;
+            const SCHEMA: &'static ::eui::schema::Type = #ty;
         }
     };
 
@@ -35,7 +35,7 @@ fn generate_type(data: &Data, span: Span, name: String) -> Result<TokenStream, s
             let ty = data.variants.iter().map(|v| generate_variants(&v.fields));
 
             quote! {
-                &::eui::schema::SdmTy::Enum(&[
+                &::eui::schema::Type::Enum(&[
                     #( &::eui::schema::NamedVariant { name: #name, ty: #ty } ),*
                 ])
             }
@@ -49,7 +49,7 @@ fn generate_type(data: &Data, span: Span, name: String) -> Result<TokenStream, s
     };
 
     Ok(quote! {
-        &::eui::schema::NamedType {
+        &::eui::schema::Type::NamedType {
             name: #name,
             ty: #ty,
         }
@@ -62,9 +62,9 @@ fn generate_struct(fields: &Fields) -> TokenStream {
             let fields = fields.named.iter().map(|f| {
                 let ty = &f.ty;
                 let name = f.ident.as_ref().unwrap().to_string();
-                quote_spanned!(f.span() => &::eui::schema::NamedValue { name: #name, ty: <#ty as ::eui::schema::Schema>::SCHEMA })
+                quote_spanned!(f.span() => &::eui::schema::Field { name: #name, ty: <#ty as ::eui::schema::Schema>::SCHEMA })
             });
-            quote! { &::eui::schema::SdmTy::Struct(&[
+            quote! { &::eui::schema::Type::Struct(&[
                 #( #fields ),*
             ]) }
         }
@@ -73,12 +73,12 @@ fn generate_struct(fields: &Fields) -> TokenStream {
                 let ty = &f.ty;
                 quote_spanned!(f.span() => <#ty as ::eui::schema::Schema>::SCHEMA)
             });
-            quote! { &::eui::schema::SdmTy::TupleStruct(&[
+            quote! { &::eui::schema::Type::TupleStruct(&[
                 #( #fields ),*
             ]) }
         }
         syn::Fields::Unit => {
-            quote! { &::eui::schema::SdmTy::UnitStruct }
+            quote! { &::eui::schema::Type::UnitStruct }
         }
     }
 }
@@ -89,9 +89,9 @@ fn generate_variants(fields: &Fields) -> TokenStream {
             let fields = fields.named.iter().map(|f| {
                 let ty = &f.ty;
                 let name = f.ident.as_ref().unwrap().to_string();
-                quote_spanned!(f.span() => ::eui::schema::NamedValue { name: #name, ty: <#ty as ::eui::schema::Schema>::SCHEMA })
+                quote_spanned!(f.span() => ::eui::schema::Field { name: #name, ty: <#ty as ::eui::schema::Schema>::SCHEMA })
             });
-            quote! { &::eui::schema::SdmTy::StructVariant(&[
+            quote! { &::eui::schema::Type::StructVariant(&[
                 #( #fields ),*
             ]) }
         }
@@ -100,12 +100,12 @@ fn generate_variants(fields: &Fields) -> TokenStream {
                 let ty = &f.ty;
                 quote_spanned!(f.span() => <#ty as ::eui::schema::Schema>::SCHEMA)
             });
-            quote! { &::eui::schema::SdmTy::TupleVariant(&[
+            quote! { &::eui::schema::Type::TupleVariant(&[
                 #( #fields ),*
             ]) }
         }
         syn::Fields::Unit => {
-            quote! { &::eui::schema::SdmTy::UnitVariant }
+            quote! { &::eui::schema::Type::UnitVariant }
         }
     }
 }
