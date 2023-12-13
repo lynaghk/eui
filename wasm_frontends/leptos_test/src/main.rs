@@ -1,3 +1,4 @@
+use leptos::logging::log;
 use leptos::*;
 
 // #[component]
@@ -19,10 +20,104 @@ use leptos::*;
 //     }
 // }
 
-// Easy to use with Trunk (trunkrs.dev) or with a simple wasm-bindgen setup
+#[component]
+pub fn render_control(ty: &'static eui::schema::Type) -> impl IntoView {
+    log!("{:?}", ty);
+
+    use eui::schema::Type::*;
+    use eui::schema::{Field, NamedVariant};
+    match ty {
+        Bool => todo!(),
+        U8 => {
+            view! {
+                            <div class="type" data-type="u8">
+            <input type="number" min="0" max="255" on:input=move |e| {
+            log!("{:?}", event_target_value(&e))
+            }/>
+            </div>
+                        }
+        }
+        U16 => todo!(),
+        U32 => todo!(),
+        U64 => todo!(),
+        I8 => todo!(),
+        I16 => todo!(),
+        I32 => todo!(),
+        I64 => todo!(),
+        F32 => todo!(),
+        F64 => todo!(),
+        String => todo!(),
+        ByteArray => todo!(),
+        Option(_) => todo!(),
+        Unit | UnitVariant | UnitStruct => {
+            view! { <div class="type" data-type="a-unit"></div> }
+        }
+        NewtypeStruct(_) => todo!(),
+        NewtypeVariant(_) => todo!(),
+        Seq(_) => todo!(),
+        Tuple(_) => todo!(),
+        TupleStruct(_) => todo!(),
+        TupleVariant(variants) => {
+            view! { <div class="type" data-type="tuple-variant">
+                     { variants.into_iter().map(|ty| view!{<RenderControl ty=ty />}
+
+                     ).collect_view()
+
+                     }
+                     </div>
+
+
+            }
+        }
+        Map { key, val } => todo!(),
+        Struct(fields) => {
+            view! { <div class="type" data-type="struct">
+                     { fields.into_iter().map(|Field{name, ty}| view!{                       <div class="type" data-type="field">
+                                                                                              <label> {name.to_string()} </label>
+                                                                                              <RenderControl ty=ty />
+                                                                                              </div>}
+
+                     ).collect_view()
+
+                     }
+                     </div>
+
+
+            }
+        }
+        StructVariant(_) => todo!(),
+        Enum(variants) => {
+            view! { <div class="type" data-type="enum">
+                     { variants.into_iter().map(|NamedVariant{name, ty}| {
+                         view!{
+                             <div class="type" data-type="named-variant">
+                                 <label> {name.to_string()} </label>
+                                 <RenderControl ty=ty />
+                                 </div>
+                         }}).collect_view()
+
+                     }
+                     </div>
+
+
+            }
+        }
+        NamedType { name, ty } => {
+            view! { <div class="type" data-type="named-type">
+                     <label> {name.to_string()} </label>
+                     <RenderControl ty=ty />
+                     </div>
+            }
+        }
+    }
+}
+
 pub fn main() {
-    leptos::logging::log!("hello");
-    mount_to_body(|| view! { <p>"Hello, world!"</p> });
+    use eui::schema::Schema;
+
+    leptos::logging::log!("{:?}", leptos_test::Light::SCHEMA);
+
+    mount_to_body(|| view! { <RenderControl ty=leptos_test::Light::SCHEMA  /> });
 
     // mount_to_body(|| {
     //     view! {
