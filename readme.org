@@ -4,7 +4,6 @@ Generate an HTML UI at compile-time which can display and edit a single rust str
 * install / run
 
 cargo install --locked --root ".cargo-installed/" --version 0.18.0 trunk
-
 cd frontend
 trunk build
 toast dev-frontend
@@ -21,7 +20,7 @@ usable entirely through crate
 - derive macro https://stackoverflow.com/questions/51310731/can-a-procedural-macro-derive-on-a-struct-add-other-derives
 * implementation options
 
-JSON Schema generated on rust types via https://docs.rs/schemars/latest/schemars/ 
+JSON Schema generated on rust types via https://docs.rs/schemars/latest/schemars/
 then generate UI
 - jQuery forms http://www.alpacajs.org/
 - react https://rjsf-team.github.io/react-jsonschema-form/
@@ -35,3 +34,14 @@ postcard + schema? https://github.com/jamesmunns/postcard/issues/92
 
 
 similar-ish idea in Rust: UI controls defined in firmware for a web UI: https://github.com/spookyvision/embedded-web-ui
+
+* log
+** 2023 Dec 13 Look at rust WASM frameworks
+
+Dioxus: failed to build their cli tool on my machine (linking error related to libgit), it had a gazillion deps anyway.
+I had to dig through the source to figure out that it was trying to mount to a DOM node with ID "main"; doesn't seem like they're into any sort of minimal / modular thing.
+Docs say a minimal build is 70kb but I can't get lower than 287 kB WASM size via trunk
+
+Sycamore: Just worked, 84kB WASM. Built on signals/reactivity. Seems to have a less experienced main author.
+
+Leptos: seems pretty popular, but devs prefer nightly rust and I couldn't get their example signals stuff working on stable. Simple hello world, 45kB WASM. Seems like a winner.
