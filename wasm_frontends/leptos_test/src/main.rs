@@ -204,17 +204,27 @@ pub fn render_control_dyn(
     //     TypeInfo::Value(info) => view! {<div>{format!("{:?}", info)}</div>},
     // }
 
+    //TODO: make this owned?
     match x.reflect_mut() {
         ReflectMut::Struct(s) => {
+            let field_names = match ty {
+                TypeInfo::Struct(info) => info.field_names(),
+                _ => unreachable!(),
+            };
+
             let idx = 0;
-
-            let f = s.field_at_mut(idx).unwrap().clone_value();
-            let name = s.name_at(idx).unwrap().to_string();
-            let local = |x| log!("Struct got: {:?}", x);
-
+            let f = s.field_at(idx).unwrap().clone_value();
+            let s2 = s.clone_dynamic();
+            let local = move |x| {
+                let mut s3 = s2.clone_dynamic();
+                let f = s3.field_at_mut(idx).unwrap();
+                f.set(x).unwrap();
+                log!("{:?}", &s3);
+                cb.call(Box::new(s3));
+            };
             view! {
                         <div>
-            { name } <RenderControlDyn x=f cb=local />
+            { field_names[idx] } <RenderControlDyn x=f cb=local />
                         </div>
                         }
         }
@@ -227,14 +237,15 @@ pub fn render_control_dyn(
         ReflectMut::Value(v) => match v.get_represented_type_info().unwrap().type_path() {
             "u64" => {
                 view! {
-                <div class="type" data-type="u8">
-                <input type="number" min="0" max="255" on:input=move |e| {
-                 let new = event_target_value(&e);
-                  cb(Box::new(new))
+                                <div class="type" data-type="u64">
+                                <input type="number" min="0" max="255" on:input=move |e| {
+                if let Ok(new) = event_target_value(&e).parse::<u64>(){
+                                  cb.call(Box::new(new));
+                }
 
-                                                 }/>
-                                                 </div>
-                                                             }
+                                                                 }/>
+                                                                 </div>
+                                                                             }
             }
 
             unknown => view! { <div> "Unknown type: " { unknown } </div> },
@@ -246,9 +257,6 @@ pub fn main() {
     // use eui::schema::Schema;
     // log!("{:?}", leptos_test::Light::SCHEMA);
 
-    let cb = |x| {
-        log!("{:?}", x);
-    };
     //let ty = leptos_test::Light::type_info();
 
     #[derive(Debug, Reflect)]
@@ -256,12 +264,17 @@ pub fn main() {
         x: u64,
     }
 
-    let ty = Foo::type_info();
-
+    // let ty = Foo::type_info();
     //mount_to_body(move || view! { <RenderControl ty=ty cb=cb /> });
 
     mount_to_body(move || {
         let x = Box::new(Foo { x: 100 });
+
+        let cb = |x: Box<dyn Reflect>| {
+            let res = Foo::from_reflect(&*x);
+            log!("toplevel got: {:?}", res);
+        };
+
         view! { <RenderControlDyn x=x cb=cb /> }
     });
 
