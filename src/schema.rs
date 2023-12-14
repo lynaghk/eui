@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use serde::Serialize;
+use serde_derive::Serialize;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub enum Type {
@@ -39,6 +39,11 @@ pub enum Type {
         ty: &'static Type,
     },
 }
+
+// struct {
+// validation: Fn(),
+// ty: Type
+// }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct Field {

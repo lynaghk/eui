@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+bevy_reflect = "0.12.1"
 eui_derive = { path = "eui_derive" }
 serde = "*"
+serde_derive = "*"
 
 # serde_json = "*"
 # wasm-bindgen = "0.2"
