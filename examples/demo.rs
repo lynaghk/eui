@@ -1,3 +1,5 @@
+use eui::*;
+
 use eui::schema::Schema;
 
 #[derive(Debug, eui::Schema)]
@@ -13,6 +15,6 @@ pub struct Color {
     b: u8,
 }
 
-fn main() {
-    println!("{:?}", Light::SCHEMA);
+pub fn main() {
+    serve_blocking::<Light, _>("127.0.0.1:8080");
 }

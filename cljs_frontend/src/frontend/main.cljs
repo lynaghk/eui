@@ -19,29 +19,56 @@
 
 
 
-;; See https://serde.rs/json.html for default serde json data representations
+;; Serde json data representations: https://serde.rs/json.html for
+
+;; struct W {
+;;     a: i32,
+;;     b: i32,
+;; }
+;; let w = W { a: 0, b: 0 }; // Represented as `{"a":0,"b":0}`
+
+;; struct X(i32, i32);
+;; let x = X(0, 0); // Represented as `[0,0]`
+
+;; struct Y(i32);
+;; let y = Y(0); // Represented as just the inner value `0`
+
+;; struct Z;
+;; let z = Z; // Represented as `null`
+
+;; enum E {
+;;     W { a: i32, b: i32 },
+;;     X(i32, i32),
+;;     Y(i32),
+;;     Z,
+;; }
+;; let w = E::W { a: 0, b: 0 }; // Represented as `{"W":{"a":0,"b":0}}`
+;; let x = E::X(0, 0);          // Represented as `{"X":[0,0]}`
+;; let y = E::Y(0);             // Represented as `{"Y":0}`
+;; let z = E::Z;                // Represented as `"Z"`
 
 (defn default
-  [{:strs [name ty] :as type}]
-  (match ty
-    {"Enum" variants} (let [v (first variants)]
-                        {(v "name") (default v)})
+  [type]
+  (let [{:strs [name ty]} (type "NamedType" type)]
+    (match ty
+      {"Enum" variants} (let [v (first variants)]
+                          {(v "name") (default v)})
 
-    "UnitVariant" name
+      "UnitVariant" name
 
-    {"TupleVariant" [t]} {name (default t)}
+      {"TupleVariant" [t]} {name (default t)}
 
-    {"TupleVariant" tuples} {name (mapv default tuples)}
+      {"TupleVariant" tuples} {name (mapv default tuples)}
 
-    {"Struct" fields} (into {} (for [f fields]
-                                 [(f "name") (default f)]))
+      {"Struct" fields} (into {} (for [f fields]
+                                   [(f "name") (default f)]))
 
-    {"name" "u8" "ty" "U8"} 0
+      "U8" 0
 
-    :else (do
-            (pp "No default for type")
-            (pp type)
-            nil)))
+      :else (do
+              (pp "No default for type")
+              (pp type)
+              nil))))
 
 
 (rum/defcs *render <
@@ -56,11 +83,12 @@
                                                                              (on-change new))))))))}
 
   [{!local :rum/local :as state}
-   {:strs [name ty] :as type}
+   type
    value
    on-change]
 
-  (let [value (or @!local (default type))]
+  (let [{:strs [name ty]} (type "NamedType" type)
+        value (or @!local (default type))]
     (match ty
       {"Enum" variants} [:.enum
                          [:span name]
@@ -102,16 +130,18 @@
                                      (get value (f "name"))
                                      #(reset! !local (assoc value (f "name") %)))])]
 
-      {"name" "u8" "ty" "U8"} [:label name
-                               [:input {:on-change (fn [e] (reset! !local (js/parseInt (.-value (.-target e)))))
-                                        :type :range
-                                        :value value
-                                        :min 0 :max 255}]
-                               [:input {:on-change (fn [e]
-                                                     (let [s (.-value (.-target e))
-                                                           x (js/parseFloat s)]
-                                                       (reset! !local (if (NaN? x) "" x))))
-                                        :value value}]]
+      "U8" [:label name
+            [:input {:on-change (fn [e] (reset! !local (js/parseInt (.-value (.-target e)))))
+                     :type :range
+                     :value value
+                     :min 0 :max 255}]
+            [:input {:on-change (fn [e]
+                                  (let [s (.-value (.-target e))
+                                        x (js/parseFloat s)]
+                                    (reset! !local (if (NaN? x) "" x))))
+                     :value value}]]
+
+
 
       :else (do
               (pp "Unable to render type")
@@ -135,74 +165,24 @@
 
   [{!value :rum/local :as state} trigger! !app]
 
-  (let [{:keys [schema value fns port] :as app} @!app]
+  (let [{:keys [schema value] :as app} @!app]
     [:.app
+     [:.connected
 
-     (cond
+      (*render schema
+               value
+               (fn [x] (reset! !value x)))
 
-       (nil? port)
-       [:button {:on-click (fn [e]
-                             (-> (.-serial js/navigator)
-                                 (.requestPort #js {})
-                                 (.then (fn [port]
-                                          (-> (.open port #js {:baudRate 115200})
-                                              (.then (fn []
-                                                       (.addEventListener port "disconnect" #(trigger! :port-closed {:port port}))
-                                                       (trigger! :port-opened {:port (.getWriter (.-writable port))}))))))
-                                 (.catch (fn [err]
-                                           (p err)))))}
-        "Connect"]
+      ;;[:pre (with-out-str (pprint schema))]
 
-
-       (not (nil? port))
-       [:.connected
-
-        (*render schema
-                 value
-                 (fn [x] (reset! !value x)))
-
-        ;;[:pre (with-out-str (pprint schema))]
-
-        [:section [:h2 "Output"]
-         [:pre (with-out-str (pprint @!value))]
-         (when-let [serialize (some-> fns (aget "eui_serialize"))]
-           (when-let [v @!value]
-             (let [bytes (serialize (js/JSON.stringify (clj->js v)))
-                   valid? (not (nil? bytes))]
-
-               (when valid?
-                 (.write port bytes))
-
-               [:span "Valid? " (str valid?)])))]
-
-        ])
-
-
-
-
-
-
-     ;; (*render {:name "Test" :ty "U8"}
-     ;;          (fn [x] (p x))
-     ;;          value)
-     ]))
+      [:section [:h2 "Output"]
+       [:pre (with-out-str (pprint @!value))]]]]))
 
 
 (defn update-app
   [app event]
 
   (match event
-
-    {:event :port-opened :port port}
-    (do
-      (when-let [p (:port app)]
-        (.close p))
-      (assoc app :port port))
-
-    {:event :port-closed :port port}
-    (-> app
-        (->/when (= port (:port app))
-          (dissoc :port)))
 
     :else
     (do
@@ -245,27 +225,10 @@
         []
         (full-render!))
 
-      ;; this fn called by rust
-      ;; (aset js/window "eui_invoke" (fn [s]
-      ;;                                (swap! !app assoc :schema s)))
-
-      ;; (.then (.getPorts (.-serial js/navigator)) (fn [ports]
-      ;;                                              (trigger! :new-ports {:ports ports})))
-
-      ;; expose wasm fns in js
-      (.addEventListener js/document "eui-wasm-loaded" (fn [e]
-                                                         (swap! !app assoc
-                                                                :fns (aget e "detail" "bindings")
-                                                                :schema (-> ((aget e "detail" "bindings" "eui_schema"))
-                                                                            js/JSON.parse
-                                                                            js->clj))))
-
-
-
       ;;initial render
       (full-render!))))
 
 
 (defn main
   []
-  (start! $app-container {}))
+  (start! $app-container {:schema (js->clj js/SCHEMA)}))

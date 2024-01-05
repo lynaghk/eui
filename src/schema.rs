@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use serde_derive::Serialize;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
@@ -18,32 +16,29 @@ pub enum Type {
     String,
     ByteArray,
     Option(&'static Type),
+
     Unit,
     UnitStruct,
     UnitVariant,
-    NewtypeStruct(&'static Type),
-    NewtypeVariant(&'static Type),
-    Seq(&'static Type),
+
     Tuple(&'static [&'static Type]),
     TupleStruct(&'static [&'static Type]),
     TupleVariant(&'static [&'static Type]),
-    Map {
-        key: &'static Type,
-        val: &'static Type,
-    },
+
     Struct(&'static [&'static Field]),
     StructVariant(&'static [&'static Field]),
     Enum(&'static [&'static NamedVariant]),
+
+    Seq(&'static Type),
+    // Map {
+    //     key: &'static Type,
+    //     val: &'static Type,
+    // },
     NamedType {
         name: &'static str,
         ty: &'static Type,
     },
 }
-
-// struct {
-// validation: Fn(),
-// ty: Type
-// }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct Field {

@@ -1,11 +1,11 @@
 {:deps true
  :http {:port 9631}
- :dev-http {9090 "dist/"}
+ ;;:dev-http {9090 "dist/"}
  :builds {:frontend {:target :browser
                      :dev     {:modules {:main {:init-fn frontend.main/main}}}
                      :release {:modules {:main {:init-fn frontend.main/main}}}
-                     :devtools {:watch-dir "dist/"}
                      :compiler-options {:infer-externs false
                                         :warnings {:extending-base-js-type false}}
-                     :output-dir "dist/js"
-                     :asset-path "js"}}}
+                     :asset-path "js"
+                     :output-dir "public_dev/js"
+                     :devtools {:watch-dir "public_dev/"}}}}

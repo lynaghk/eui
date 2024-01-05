@@ -3,8 +3,8 @@ Embedded UI generator
 Generate an HTML UI at compile-time which can display and edit a single rust struct.
 * install / run
 
-cargo install --locked --root ".cargo-installed/" --version 0.18.0 trunk
-cd frontend
+cargo install --locked --root ".cargo-installed/" --version 0.18.3 trunk
+cd cljs_frontend
 trunk build
 toast dev-frontend
 
@@ -36,6 +36,35 @@ postcard + schema? https://github.com/jamesmunns/postcard/issues/92
 similar-ish idea in Rust: UI controls defined in firmware for a web UI: https://github.com/spookyvision/embedded-web-ui
 
 * log
+** 2024 Jan 5 back to CLJS
+
+Frontend Rust didn't spark joy, so I'm going to go back to CLJS.
+I want everything to be transparent from the consumer perspective, though --- so I need to find a workflow that compiles all of the cljs, sass, etc. in advance and Just Works from Cargo.
+I'm not sure if that's really possible though (because I need to compile the consumer's code), so the best I might be able to do is a template UI/ folder that you copy/paste into your project, then tweak to reference your data definitions, etc.
+
+Hmm, if I lean into copy/paste, though, then why not just have the consumer compile the cljs too?
+They can mess with the source if they want...
+I'm 35, I should be okay with copy/paste by now.
+
+Well, downside is additional compilation time and potential dependency hell around CLJS / SASS.
+Ugh.
+
+I could try and lose trunk and just use wasm without bindgen.
+Then the basic CLJS <-> WASM Rust API is just a few things:
+
+- schema           (JSON constant)
+- validate field   (JSON -> string)
+- validate message (JSON -> string)
+- send             (JSON -> void)
+
+hmm, an even easier approach would be to just have generic JS on the frontend and do all validation, etc. on the backend server.
+Infra would be simpler too, it'd look more like my splot library where you just import the crate and parameterize with your own types.
+
+Let's have a go.
+
+
+
+
 ** 2023 Dec 13 Look at rust WASM frameworks
 
 Dioxus: failed to build their cli tool on my machine (linking error related to libgit), it had a gazillion deps anyway.
