@@ -174,9 +174,25 @@
                (fn [x] (reset! !value x)))
 
       ;;[:pre (with-out-str (pprint schema))]
-
-      [:section [:h2 "Output"]
-       [:pre (with-out-str (pprint @!value))]]]]))
+      (let [v @!value]
+        [:section [:h2 "Output"]
+         [:pre (with-out-str (pprint v))]
+         [:button {:on-click #(-> (js/fetch "/cmd" #js {:credentials "include"
+                                                        :method "POST"
+                                                        :headers #js {"Content-Type" "application/json"}
+                                                        :body (.stringify js/JSON (clj->js v))})
+                                  (.then (fn [response]
+                                           (if (not (.-ok response))
+                                             (.then (.text response) (fn [t]
+                                                                       (.error js/console t)
+                                                                       (throw (js/Error. (str "Bad response: " (.-status response))))))
+                                             (.text response))))
+                                  ;;(.then on-success)
+                                  (.catch (fn [e]
+                                            (.error js/console e))))}
+          "Send"
+          ]
+         ])]]))
 
 
 (defn update-app
@@ -231,4 +247,4 @@
 
 (defn main
   []
-  (start! $app-container {:schema (js->clj js/SCHEMA)}))
+  (start! $app-container {:schema (js->clj js/SCHEMA_COMMAND)}))

@@ -110,7 +110,6 @@ fn generate_variants(fields: &Fields) -> TokenStream {
     }
 }
 
-/// Add a bound `T: MaxSize` to every type parameter T.
 fn add_trait_bounds(mut generics: Generics) -> Generics {
     for param in &mut generics.params {
         if let GenericParam::Type(ref mut type_param) = *param {
