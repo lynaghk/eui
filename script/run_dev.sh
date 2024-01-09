@@ -9,7 +9,7 @@ trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
 
 
 export EUI_DEV=true
-
+export RUST_LOG=info
 
 # Start watching rust
 fd ".rs" | entr -crs "cargo run --example demo" &

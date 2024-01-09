@@ -1,24 +1,21 @@
 pub mod schema;
 pub use schema::Schema;
 
-pub use eui_derive::Schema;
+// Re-export annotation macro
+pub use eui_derive::eui;
 
-pub trait Status: Schema + serde::Serialize + Send + Clone {}
-
-// TODO: understand why I need the 'static here.
-pub trait Command: Schema + for<'a> serde::Deserialize<'a> + Send + Clone + 'static {}
+// Marker traits
+pub trait Status: Schema + serde::Serialize + Send {}
+pub trait Command: Schema + for<'a> serde::Deserialize<'a> + Send + 'static {}
 
 use axum::{
     handler::HandlerWithoutStateExt,
     http::StatusCode,
-    response::{Html, IntoResponse},
+    response::Html,
     routing::{get, post},
     Json, Router,
 };
 use tower_http::services::ServeDir;
-
-//TODO, don't re-export.
-pub use bevy_reflect;
 
 use log::*;
 use tokio::{
@@ -32,7 +29,7 @@ async fn serve<A: ToSocketAddrs, S: Status, C: Command>(
     command_tx: Sender<C>,
 ) {
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    info!("EUI listening on {}", listener.local_addr().unwrap());
+    info!("Listening on {}", listener.local_addr().unwrap());
 
     async fn handle_404() -> (StatusCode, &'static str) {
         (StatusCode::NOT_FOUND, "Not found")
@@ -71,14 +68,6 @@ async fn serve<A: ToSocketAddrs, S: Status, C: Command>(
         .route("/", get(html))
         .route(
             "/cmd",
-            // post(move |cmd: String| async move {
-            //     if let Ok(cmd) = serde_json::from_str::<C>(&cmd) {
-            //         let cmd = cmd.to_owned();
-
-            //         let _ = command_tx.send(cmd).await;
-            //     }
-            //     "OK"
-            // }),
             post(move |Json(cmd): Json<C>| async move {
                 let _ = command_tx.send(cmd).await;
                 "OK"
