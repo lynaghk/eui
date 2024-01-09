@@ -4,6 +4,7 @@ use eui::*;
 #[derive(Debug)]
 pub enum Light {
     Off,
+    White(u8),
     On(Color),
 }
 

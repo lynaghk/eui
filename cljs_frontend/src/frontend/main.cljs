@@ -49,26 +49,21 @@
 
 (defn default
   [type]
-  (let [{:strs [name ty]} (type "NamedType" type)]
-    (match ty
-      {"Enum" variants} (let [v (first variants)]
-                          {(v "name") (default v)})
+  (match type
+    {"NamedType" {"name" _ "ty" ty}} (default ty)
+    {"Enum" variants} (default (first variants))
+    {"Struct" fields} (into {} (for [f fields]
+                                 [(f "name") (default f)]))
+    {"name" name "ty" "UnitVariant"} name
+    {"name" name "ty" {"TupleVariant" [tuple]}} {name (default tuple)}
+    {"name" name "ty" {"TupleVariant" tuples}} {name (mapv default tuples)}
 
-      "UnitVariant" name
-
-      {"TupleVariant" [t]} {name (default t)}
-
-      {"TupleVariant" tuples} {name (mapv default tuples)}
-
-      {"Struct" fields} (into {} (for [f fields]
-                                   [(f "name") (default f)]))
-
-      "U8" 0
-
-      :else (do
-              (pp "No default for type")
-              (pp type)
-              nil))))
+    {"name" _ "ty" ty} (default ty)
+    "U8" 0
+    :else (do
+            (pp "No default for type")
+            (pp type)
+            nil)))
 
 
 (rum/defcs *render <
@@ -87,50 +82,57 @@
    value
    on-change]
 
-  (let [{:strs [name ty]} (type "NamedType" type)
-        value (or @!local (default type))]
-    (match ty
-      {"Enum" variants} [:.enum
-                         [:span name]
-                         [:ol
-                          (for [v variants]
-                            (let [selected? (or (= value (v "name"))
-                                                (contains? value (v "name")))]
-                              [:li {:data-is-selected selected?}
-                               (*render v
-                                        value
-                                        #(reset! !local %))]))]]
+  (let [value (or @!local (default type))]
+    (match type
+      {"NamedType" {"name" name "ty" {"Struct" fields}}}
+      [:.struct
+       [:label name]
+       (for [f fields]
+         [:.field
+          (*render f
+                   (get value (f "name"))
+                   #(reset! !local (assoc value (f "name") %)))])]
 
-      "UnitVariant" [:.variant
-                     [:button {:on-click #(on-change name)}
-                      name]]
+      {"NamedType" {"name" name "ty" {"Enum" variants}}}
+      [:.enum
+       [:label name]
+       [:ol
+        (for [v variants]
+          (let [selected? (or (= value (v "name"))
+                              (contains? value (v "name")))]
+            [:li {:data-is-selected selected?}
+             (*render v
+                      value
+                      #(reset! !local %))]))]]
 
-      {"TupleVariant" [t]} [:.variant
-                            [:button {:on-click #(reset! !local value)}
-                             name]
-                            (*render t
-                                     (get value name)
-                                     #(reset! !local (assoc value name %)))]
+      ;; {"NamedType" {"name" name "ty" ty}} [:label name
+      ;;                                      (*render ty value on-change)]
 
-      {"TupleVariant" tuples} [:.variant
-                               [:button {:on-click #(reset! !local value)}
-                                name]
-                               [:ol.tuples
-                                (for [[idx t] (map-indexed vector tuples)]
-                                  [:li
-                                   (*render t
-                                            (get-in value [name idx])
-                                            #(reset! !local (assoc-in value [name idx] %)))])]]
+      {"name" name "ty" "UnitVariant"} [:.variant
+                                        [:button {:on-click #(on-change name)}
+                                         name]]
 
-      {"Struct" fields} [:.struct
-                         [:span name]
-                         (for [f fields]
-                           [:.field
-                            (*render f
-                                     (get value (f "name"))
-                                     #(reset! !local (assoc value (f "name") %)))])]
+      {"name" name "ty" {"TupleVariant" [t]}} [:.variant
+                                               [:button {:on-click #(reset! !local value)}
+                                                name]
+                                               (*render t
+                                                        (get value name)
+                                                        #(reset! !local (assoc value name %)))]
 
-      "U8" [:label name
+      {"name" name "ty" {"TupleVariant" tuples}} [:.variant
+                                                  [:button {:on-click #(reset! !local value)}
+                                                   name]
+                                                  [:ol.tuples
+                                                   (for [[idx t] (map-indexed vector tuples)]
+                                                     [:li
+                                                      (*render t
+                                                               (get-in value [name idx])
+                                                               #(reset! !local (assoc-in value [name idx] %)))])]]
+
+      {"name" _ "ty" ty} (*render ty value on-change)
+
+
+      "U8" [:.primitive {:data-type type}
             [:input {:on-change (fn [e] (reset! !local (js/parseInt (.-value (.-target e)))))
                      :type :range
                      :value value
@@ -141,11 +143,9 @@
                                     (reset! !local (if (NaN? x) "" x))))
                      :value value}]]
 
-
-
       :else (do
               (pp "Unable to render type")
-              (pp ty)
+              (pp type)
               nil))))
 
 
