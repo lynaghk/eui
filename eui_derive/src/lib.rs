@@ -13,7 +13,8 @@ pub fn eui(
     let input: proc_macro2::TokenStream = input.into();
 
     let output = quote::quote! {
-        #[derive(eui_derive::Schema, serde_derive::Serialize, serde_derive::Deserialize)]
+        #[derive(eui::eui_derive::Schema, eui::serde::Serialize, eui::serde::Deserialize)]
+        #[serde(crate = "self::serde")]
         #input
     };
 

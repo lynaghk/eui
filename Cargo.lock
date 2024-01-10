@@ -178,7 +178,6 @@ dependencies = [
  "eui_derive",
  "log",
  "serde",
- "serde_derive",
  "serde_json",
  "tokio",
  "tower-http",
@@ -191,7 +190,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "serde",
- "serde_json",
  "syn 1.0.109",
 ]
 

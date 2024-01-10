@@ -3,9 +3,6 @@ Embedded UI generator
 Generate an HTML UI at compile-time which can display and edit a single rust struct.
 * install / run
 
-
-
-
 ./script/run_dev.sh
 
 * roadmap

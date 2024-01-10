@@ -4,46 +4,55 @@ pub use schema::Schema;
 // Re-export annotation macro
 pub use eui_derive::eui;
 
+// Re-export crates so eui_derive::eui annotation macro works. TODO: is this the "right" way to do this?
+pub extern crate eui_derive;
+pub extern crate serde;
+
 // Marker traits
 pub trait Status: Schema + serde::Serialize + Send {}
 pub trait Command: Schema + for<'a> serde::Deserialize<'a> + Send + 'static {}
 
-use axum::{
-    handler::HandlerWithoutStateExt,
-    http::StatusCode,
-    response::Html,
-    routing::{get, post},
-    Json, Router,
-};
-use tower_http::services::ServeDir;
+#[cfg(feature = "full")]
+mod full {
+    use super::*;
+    pub use tokio::sync::mpsc::channel;
 
-use log::*;
-use tokio::{
-    net::ToSocketAddrs,
-    sync::mpsc::{Receiver, Sender},
-};
+    use axum::{
+        handler::HandlerWithoutStateExt,
+        http::StatusCode,
+        response::Html,
+        routing::{get, post},
+        Json, Router,
+    };
+    use tower_http::services::ServeDir;
 
-async fn serve<A: ToSocketAddrs, S: Status, C: Command>(
-    addr: A,
-    status_rx: Receiver<S>,
-    command_tx: Sender<C>,
-) {
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    info!("Listening on {}", listener.local_addr().unwrap());
+    use log::*;
+    use tokio::{
+        net::ToSocketAddrs,
+        sync::mpsc::{Receiver, Sender},
+    };
 
-    async fn handle_404() -> (StatusCode, &'static str) {
-        (StatusCode::NOT_FOUND, "Not found")
-    }
+    async fn serve<A: ToSocketAddrs, S: Status, C: Command>(
+        addr: A,
+        status_rx: Receiver<S>,
+        command_tx: Sender<C>,
+    ) {
+        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+        info!("Listening on {}", listener.local_addr().unwrap());
 
-    let serve_dir = ServeDir::new(if option_env!("EUI_DEV").is_some() {
-        "cljs_frontend/public_dev/"
-    } else {
-        "cljs_frontend/public_release/"
-    })
-    .not_found_service(handle_404.into_service());
+        async fn handle_404() -> (StatusCode, &'static str) {
+            (StatusCode::NOT_FOUND, "Not found")
+        }
 
-    let html = Html(format!(
-        r#"
+        let serve_dir = ServeDir::new(if option_env!("EUI_DEV").is_some() {
+            "cljs_frontend/public_dev/"
+        } else {
+            "cljs_frontend/public_release/"
+        })
+        .not_found_service(handle_404.into_service());
+
+        let html = Html(format!(
+            r#"
 <!DOCTYPE html>
 <html>
   <head>
@@ -60,32 +69,36 @@ async fn serve<A: ToSocketAddrs, S: Status, C: Command>(
   </body>
 </html>
 "#,
-        serde_json::to_string(S::SCHEMA).unwrap(),
-        serde_json::to_string(C::SCHEMA).unwrap(),
-    ));
+            serde_json::to_string(S::SCHEMA).unwrap(),
+            serde_json::to_string(C::SCHEMA).unwrap(),
+        ));
 
-    let app = Router::new()
-        .route("/", get(html))
-        .route(
-            "/cmd",
-            post(move |Json(cmd): Json<C>| async move {
-                let _ = command_tx.send(cmd).await;
-                "OK"
-            }),
-        )
-        .fallback_service(serve_dir);
+        let app = Router::new()
+            .route("/", get(html))
+            .route(
+                "/cmd",
+                post(move |Json(cmd): Json<C>| async move {
+                    let _ = command_tx.send(cmd).await;
+                    "OK"
+                }),
+            )
+            .fallback_service(serve_dir);
 
-    axum::serve(listener, app).await.unwrap();
+        axum::serve(listener, app).await.unwrap();
+    }
+
+    pub fn serve_blocking<A: ToSocketAddrs, S: Status, C: Command>(
+        addr: A,
+        status_rx: Receiver<S>,
+        command_tx: Sender<C>,
+    ) {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        rt.block_on(async { serve(addr, status_rx, command_tx).await })
+    }
 }
 
-pub fn serve_blocking<A: ToSocketAddrs, S: Status, C: Command>(
-    addr: A,
-    status_rx: Receiver<S>,
-    command_tx: Sender<C>,
-) {
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap();
-    rt.block_on(async { serve(addr, status_rx, command_tx).await })
-}
+#[cfg(feature = "full")]
+pub use full::*;

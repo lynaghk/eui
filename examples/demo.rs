@@ -22,8 +22,8 @@ impl Command for Light {}
 pub fn main() -> ! {
     env_logger::init();
 
-    let (cmd_tx, mut cmd_rx) = tokio::sync::mpsc::channel::<Light>(64);
-    let (status_tx, status_rx) = tokio::sync::mpsc::channel::<Light>(64);
+    let (cmd_tx, mut cmd_rx) = channel::<Light>(64);
+    let (status_tx, status_rx) = channel::<Light>(64);
 
     std::thread::spawn(|| {
         serve_blocking("127.0.0.1:8080", status_rx, cmd_tx);
