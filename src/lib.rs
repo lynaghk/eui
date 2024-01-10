@@ -44,12 +44,16 @@ mod full {
             (StatusCode::NOT_FOUND, "Not found")
         }
 
-        let serve_dir = ServeDir::new(if option_env!("EUI_DEV").is_some() {
-            "cljs_frontend/public_dev/"
-        } else {
-            "cljs_frontend/public_release/"
-        })
-        .not_found_service(handle_404.into_service());
+        let serve_dir = {
+            let crate_root = env!("CARGO_MANIFEST_DIR");
+            std::path::PathBuf::from(crate_root).join(if option_env!("EUI_DEV").is_some() {
+                "cljs_frontend/public_dev/"
+            } else {
+                "cljs_frontend/public_release/"
+            })
+        };
+
+        let serve_dir = ServeDir::new(serve_dir).not_found_service(handle_404.into_service());
 
         let html = Html(format!(
             r#"
