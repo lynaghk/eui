@@ -34,7 +34,8 @@ mod full {
 
     async fn serve<A: ToSocketAddrs, S: Status, C: Command>(
         addr: A,
-        status_rx: Receiver<S>,
+        //TODO: display status
+        _status_rx: Receiver<S>,
         command_tx: Sender<C>,
     ) {
         let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
