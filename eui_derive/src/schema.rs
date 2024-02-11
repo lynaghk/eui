@@ -1,3 +1,5 @@
+// A fair bit of this taken/modified from https://github.com/jamesmunns/postcard/blob/393e18aeee3fe59872ad9231da225170c8296d56/postcard-derive/src/schema.rs
+
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::{
