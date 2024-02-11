@@ -1,11 +1,15 @@
-Embedded UI generator
+* Embedded UI generator
 
 Generate an HTML UI at compile-time which can display and edit a single rust struct.
-* install / run
+
+This is a personal research project only.
+See my newsletter for background context: https://kevinlynagh.com/newsletter/2023_09_hardware_prototyping/
+
+** install / run
 
 ./script/run_dev.sh
 
-* roadmap
+** roadmap
 
 x control a single LED via editing an rgb struct with <input type="numeric" min="0" max="255">
 x add two-variant enum, Off and On(RGB{...})
@@ -15,7 +19,7 @@ usable entirely through crate
 - copy so wasm-bindgen doesn't need to be installed by user? https://github.com/jakobhellermann/wasm-server-runner/blob/main/src/wasm_bindgen.rs
 
 - derive macro https://stackoverflow.com/questions/51310731/can-a-procedural-macro-derive-on-a-struct-add-other-derives
-* implementation options
+** implementation options
 
 JSON Schema generated on rust types via https://docs.rs/schemars/latest/schemars/
 then generate UI
@@ -32,7 +36,7 @@ postcard + schema? https://github.com/jamesmunns/postcard/issues/92
 
 similar-ish idea in Rust: UI controls defined in firmware for a web UI: https://github.com/spookyvision/embedded-web-ui
 
-* log
+** log
 ** 2024 Jan 5 back to CLJS
 
 Frontend Rust didn't spark joy, so I'm going to go back to CLJS.
