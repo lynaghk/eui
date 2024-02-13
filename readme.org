@@ -3,7 +3,10 @@
 Generate an HTML UI at compile-time which can display and edit a single rust struct.
 
 This is a personal research project only.
-See my newsletter for background context: https://kevinlynagh.com/newsletter/2023_09_hardware_prototyping/
+See these two articles for background context:
+
+- https://kevinlynagh.com/newsletter/2023_09_hardware_prototyping/
+- https://kevinlynagh.com/newsletter/2024_02_rustrations/
 
 ** install / run
 
